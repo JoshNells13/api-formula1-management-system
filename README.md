@@ -468,7 +468,7 @@ After running `php artisan db:seed`:
 |---|---|---|---|---|
 | 16 | Charles Leclerc | 95 | 87 | 80 |
 | 55 | Carlos Sainz | 89 | 92 | 88 |
-| 99 | Antonio Giovinazzi | 78 | 79 | 75 |
+| 44 | Lewis Hamilton | 99 | 98 | 95 |
 
 ### Cars
 | Name | Chassis | Top Speed | Accel | Downforce | Reliability |
