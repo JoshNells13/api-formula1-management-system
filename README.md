@@ -74,7 +74,6 @@ Controllers are intentionally minimal — all heavy logic lives inside `app/Serv
 | country | string | |
 | principal | string | Team Principal name |
 | base | string | HQ location |
-| championships_won | integer | default 0 |
 | status | enum | `active`, `inactive` |
 
 ### `users`
