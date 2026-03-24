@@ -10,17 +10,14 @@ class SimulationController extends Controller
 {
     public function __construct(
         private readonly RaceSimulationService $simulationService
-    ) {}
+    ) {
+    }
 
-    /**
-     * Trigger race simulation for a given race.
-     * Only admins and engineers may run simulations.
-     */
     public function simulate(Request $request, $raceId)
     {
         $user = $request->user();
 
-        if (! in_array($user->role, ['admin', 'engineer'])) {
+        if (!in_array($user->role, ['admin', 'engineer'])) {
             return response()->json(['message' => 'Unauthorized. Only admin or engineer can simulate.'], 403);
         }
 

@@ -8,16 +8,14 @@ use Illuminate\Http\Request;
 
 class StrategyController extends Controller
 {
-    /**
-     * Assign or create a strategy for a participant.
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'race_participant_id' => 'required|exists:race_participants,id',
-            'pit_stop_lap'        => 'required|integer|min:1',
-            'tyre_type'           => 'required|in:soft,medium,hard',
-            'fuel_load'           => 'required|integer|min:1|max:100',
+            'pit_stop_lap' => 'required|integer|min:1',
+            'tyre_type' => 'required|in:soft,medium,hard',
+            'fuel_load' => 'required|integer|min:1|max:100',
         ]);
 
         // One strategy per participant
@@ -30,28 +28,26 @@ class StrategyController extends Controller
         $strategy = Strategy::create($validated);
 
         return response()->json([
-            'message'  => 'Strategy created successfully.',
+            'message' => 'Strategy created successfully.',
             'strategy' => $strategy,
         ], 201);
     }
 
-    /**
-     * Update an existing strategy.
-     */
+
     public function update(Request $request, $id)
     {
         $strategy = Strategy::findOrFail($id);
 
         $validated = $request->validate([
             'pit_stop_lap' => 'sometimes|integer|min:1',
-            'tyre_type'    => 'sometimes|in:soft,medium,hard',
-            'fuel_load'    => 'sometimes|integer|min:1|max:100',
+            'tyre_type' => 'sometimes|in:soft,medium,hard',
+            'fuel_load' => 'sometimes|integer|min:1|max:100',
         ]);
 
         $strategy->update($validated);
 
         return response()->json([
-            'message'  => 'Strategy updated successfully.',
+            'message' => 'Strategy updated successfully.',
             'strategy' => $strategy,
         ]);
     }

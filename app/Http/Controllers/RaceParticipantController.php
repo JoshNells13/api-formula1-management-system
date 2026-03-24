@@ -8,15 +8,13 @@ use Illuminate\Http\Request;
 
 class RaceParticipantController extends Controller
 {
-    /**
-     * Add a driver+car to an existing race.
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'race_id'       => 'required|exists:races,id',
-            'driver_id'     => 'required|exists:drivers,id',
-            'car_id'        => 'required|exists:cars,id',
+            'race_id' => 'required|exists:races,id',
+            'driver_id' => 'required|exists:drivers,id',
+            'car_id' => 'required|exists:cars,id',
             'grid_position' => 'required|integer|min:1',
         ]);
 
@@ -35,14 +33,12 @@ class RaceParticipantController extends Controller
         $participant->load('driver', 'car', 'race');
 
         return response()->json([
-            'message'     => 'Participant added to race.',
+            'message' => 'Participant added to race.',
             'participant' => $participant,
         ], 201);
     }
 
-    /**
-     * Get all participants for a specific race.
-     */
+
     public function getByRace($racesId)
     {
         $race = Race::findOrFail($racesId);
@@ -52,7 +48,7 @@ class RaceParticipantController extends Controller
             ->get();
 
         return response()->json([
-            'race'         => $race,
+            'race' => $race,
             'participants' => $participants,
         ]);
     }
