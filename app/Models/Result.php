@@ -12,7 +12,7 @@ class Result extends Model
 
     public function participant()
     {
-        return $this->belongsTo(RaceParticipant::class);
+        return $this->belongsTo(RaceParticipant::class,'race_participant_id');
     }
 
     public function lapTimes()

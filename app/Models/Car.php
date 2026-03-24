@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Car extends Model
 {
     protected $fillable = [
-        'name','chassis_code',
-        'top_speed','acceleration','downforce','reliability'
+        'team_id', 'name', 'chassis_code',
+        'top_speed', 'acceleration', 'downforce', 'reliability',
     ];
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 
     public function participants()
     {

@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Driver extends Model
 {
     protected $fillable = [
-        'name','number','nationality',
-        'speed','consistency','tyre_management','status'
+        'team_id', 'name', 'number', 'nationality',
+        'speed', 'consistency', 'tyre_management', 'status',
     ];
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 
     public function participants()
     {

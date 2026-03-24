@@ -1,6 +1,6 @@
-# 🏎️ Ferrari F1 Team Management System
+# 🏎️ F1 Multi-Team Management System
 
-> A production-ready Laravel backend simulating internal race management for Scuderia Ferrari — featuring driver management, car configuration, race creation, strategy setup, and a full lap-by-lap race simulation engine.
+> A production-ready Laravel backend that simulates internal race management for **all F1 teams** — featuring team management, driver registration per team, car configuration, race creation, strategy setup, and a full lap-by-lap race simulation engine.
 
 ---
 
@@ -22,7 +22,9 @@
 
 ## Overview
 
-The Ferrari F1 Management System is an **API-only Laravel backend** that simulates the internal operations of a Formula 1 team. It goes beyond a simple CRUD app by implementing a full **race simulation engine** that calculates realistic lap times based on:
+The F1 Multi-Team Management System is an **API-only Laravel backend** that simulates the internal operations of a Formula 1 Championship. It goes beyond Ferrari-only by supporting **any team** (Ferrari, Mercedes, Red Bull, etc.), where each team owns its own drivers and cars.
+
+The system includes a full **race simulation engine** that calculates realistic lap times based on:
 
 - Driver skill ratings (speed, consistency, tyre management)
 - Car performance stats (top speed, acceleration, downforce, reliability)
@@ -31,7 +33,7 @@ The Ferrari F1 Management System is an **API-only Laravel backend** that simulat
 - Weather conditions (sunny, cloudy, rain)
 - Fuel load weight effects per lap
 - Random performance variance (controlled by driver consistency)
-- DNF (Did Not Finish) probability based on car reliability
+- DNF probability based on car reliability
 
 ---
 
@@ -64,6 +66,17 @@ Controllers are intentionally minimal — all heavy logic lives inside `app/Serv
 
 ## Database Schema
 
+### `teams`
+| Column | Type | Notes |
+|---|---|---|
+| id | bigint | PK |
+| name | string | unique (e.g. Scuderia Ferrari) |
+| country | string | |
+| principal | string | Team Principal name |
+| base | string | HQ location |
+| championships_won | integer | default 0 |
+| status | enum | `active`, `inactive` |
+
 ### `users`
 | Column | Type | Notes |
 |---|---|---|
@@ -77,6 +90,7 @@ Controllers are intentionally minimal — all heavy logic lives inside `app/Serv
 | Column | Type | Notes |
 |---|---|---|
 | id | bigint | PK |
+| team_id | FK | → teams |
 | name | string | |
 | number | integer | car number (unique) |
 | nationality | string | |
@@ -89,6 +103,7 @@ Controllers are intentionally minimal — all heavy logic lives inside `app/Serv
 | Column | Type | Notes |
 |---|---|---|
 | id | bigint | PK |
+| team_id | FK | → teams |
 | name | string | e.g. Ferrari SF-24 |
 | chassis_code | string | unique |
 | top_speed | integer | 1–100 |
@@ -156,11 +171,13 @@ Controllers are intentionally minimal — all heavy logic lives inside `app/Serv
 ### Entity Relationships
 
 ```
-Race ──< RaceParticipant >── Driver
-              │
-              ├── Strategy (1:1)
-              └── Result (1:1)
-                    └──< LapTime
+Team ──< Driver
+Team ──< Car
+Race ──< RaceParticipant >── Driver (from any Team)
+               │            └── Car   (from any Team)
+               ├── Strategy (1:1)
+               └── Result (1:1)
+                     └──< LapTime
 ```
 
 ---
@@ -171,7 +188,7 @@ Race ──< RaceParticipant >── Driver
 
 ```bash
 git clone <repo-url>
-cd f1-ferrari-management-system
+cd f1-multi-team-management-system
 composer install
 ```
 
@@ -188,7 +205,7 @@ Edit `.env` with your database credentials:
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=f1_ferrari
+DB_DATABASE=f1_management
 DB_USERNAME=root
 DB_PASSWORD=your_password
 ```
@@ -199,7 +216,7 @@ DB_PASSWORD=your_password
 php artisan migrate:fresh --seed
 ```
 
-This creates all tables and seeds the database with Ferrari drivers, cars, races, and users.
+This creates all tables and seeds the database with Ferrari, Mercedes, and Red Bull teams, their drivers, cars, races, and users.
 
 ### 4. Start the Server
 
@@ -222,7 +239,7 @@ POST /api/login
 Content-Type: application/json
 
 {
-  "email": "admin@ferrari.com",
+  "email": "admin@f1.com",
   "password": "password"
 }
 ```
@@ -269,10 +286,33 @@ Authorization: Bearer {token}
 | GET | `/api/me` | Get authenticated user |
 | POST | `/api/logout` | Revoke current token |
 
+#### Teams
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/teams` | List all teams (with driver & car counts) |
+| POST | `/api/teams` | Create a team |
+| GET | `/api/teams/{id}` | Get team with its drivers & cars |
+| PUT | `/api/teams/{id}` | Update a team |
+| DELETE | `/api/teams/{id}` | Delete a team |
+| GET | `/api/teams/{id}/drivers` | List all drivers of a team |
+| GET | `/api/teams/{id}/cars` | List all cars of a team |
+
+**Create Team Payload:**
+```json
+{
+  "name": "Scuderia Ferrari",
+  "country": "Italy",
+  "principal": "Frédéric Vasseur",
+  "base": "Maranello, Italy",
+  "championships_won": 16
+}
+```
+
 #### Drivers
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/drivers` | List all drivers |
+| GET | `/api/drivers` | List all drivers (with team info) |
+| GET | `/api/drivers?team_id=1` | Filter drivers by team |
 | POST | `/api/drivers` | Create a driver |
 | GET | `/api/drivers/{id}` | Get driver with race history |
 | PUT | `/api/drivers/{id}` | Update a driver |
@@ -281,6 +321,7 @@ Authorization: Bearer {token}
 **Create Driver Payload:**
 ```json
 {
+  "team_id": 1,
   "name": "Charles Leclerc",
   "number": 16,
   "nationality": "Monegasque",
@@ -293,7 +334,8 @@ Authorization: Bearer {token}
 #### Cars
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/cars` | List all cars |
+| GET | `/api/cars` | List all cars (with team info) |
+| GET | `/api/cars?team_id=1` | Filter cars by team |
 | POST | `/api/cars` | Create a car |
 | GET | `/api/cars/{id}` | Get car with participants |
 | PUT | `/api/cars/{id}` | Update a car |
@@ -302,6 +344,7 @@ Authorization: Bearer {token}
 **Create Car Payload:**
 ```json
 {
+  "team_id": 1,
   "name": "Ferrari SF-24",
   "chassis_code": "SF-24-01",
   "top_speed": 92,
@@ -345,6 +388,8 @@ Authorization: Bearer {token}
 }
 ```
 
+> 💡 Drivers and cars from **different teams** can be mixed in the same race — just like real F1!
+
 #### Strategies
 | Method | Endpoint | Description |
 |---|---|---|
@@ -375,8 +420,8 @@ Authorization: Bearer {token}
   "results": [
     {
       "participant_id": 1,
-      "driver": "Charles Leclerc",
-      "result": { "total_time": 4823.4, "fastest_lap": 84.2, "position": 1, "status": "finished" }
+      "driver": "Max Verstappen",
+      "result": { "total_time": 4791.2, "fastest_lap": 83.1, "position": 1, "status": "finished" }
     }
   ]
 }
@@ -394,8 +439,8 @@ Authorization: Bearer {token}
 {
   "race": "Italian Grand Prix",
   "results": [
-    { "position": 1, "driver": "Charles Leclerc", "total_time": "4823.4s", "gap": "Leader" },
-    { "position": 2, "driver": "Carlos Sainz",    "total_time": "4829.1s", "gap": "+5.7s" }
+    { "position": 1, "driver": "Max Verstappen", "total_time": "4791.2s", "gap": "Leader" },
+    { "position": 2, "driver": "Charles Leclerc", "total_time": "4797.9s", "gap": "+6.7s" }
   ]
 }
 ```
@@ -442,8 +487,6 @@ Each lap runs a reliability check:
 DNF chance/lap = max(0.02%, (200 − car.reliability − driver.consistency) / 200 × 0.5%)
 ```
 
-A car with `reliability=85` and driver `consistency=87` has **~0.14% DNF chance per lap** — realistic for modern F1.
-
 ### Positions
 
 After all laps are simulated:
@@ -454,27 +497,38 @@ After all laps are simulated:
 
 ## Default Seeded Data
 
-After running `php artisan db:seed`:
+After running `php artisan migrate:fresh --seed`:
 
 ### Users
 | Name | Email | Password | Role |
 |---|---|---|---|
-| Race Admin | admin@ferrari.com | password | admin |
-| Race Engineer | engineer@ferrari.com | password | engineer |
-| Viewer | viewer@ferrari.com | password | viewer |
+| Race Admin | admin@f1.com | password | admin |
+| Race Engineer | engineer@f1.com | password | engineer |
+| Viewer | viewer@f1.com | password | viewer |
+
+### Teams
+| # | Team | Country | Principal | Championships |
+|---|---|---|---|---|
+| 1 | Scuderia Ferrari | Italy | Frédéric Vasseur | 16 |
+| 2 | Mercedes-AMG Petronas | United Kingdom | Toto Wolff | 8 |
+| 3 | Oracle Red Bull Racing | Austria | Christian Horner | 6 |
 
 ### Drivers
-| # | Name | Speed | Consistency | Tyre Mgmt |
-|---|---|---|---|---|
-| 16 | Charles Leclerc | 95 | 87 | 80 |
-| 55 | Carlos Sainz | 89 | 92 | 88 |
-| 44 | Lewis Hamilton | 99 | 98 | 95 |
+| # | Name | Team | Speed | Consistency | Tyre Mgmt |
+|---|---|---|---|---|---|
+| 16 | Charles Leclerc | Ferrari | 95 | 87 | 80 |
+| 55 | Carlos Sainz | Ferrari | 89 | 92 | 88 |
+| 44 | Lewis Hamilton | Mercedes | 99 | 98 | 95 |
+| 63 | George Russell | Mercedes | 91 | 89 | 85 |
+| 1 | Max Verstappen | Red Bull | 99 | 97 | 94 |
+| 11 | Sergio Perez | Red Bull | 86 | 84 | 87 |
 
 ### Cars
-| Name | Chassis | Top Speed | Accel | Downforce | Reliability |
-|---|---|---|---|---|---|
-| Ferrari SF-24 | SF-24-01 | 92 | 90 | 88 | 85 |
-| Ferrari SF-23 | SF-23-02 | 86 | 84 | 83 | 88 |
+| Name | Chassis | Team | Top Speed | Accel | Downforce | Reliability |
+|---|---|---|---|---|---|---|
+| Ferrari SF-24 | SF-24-01 | Ferrari | 92 | 90 | 88 | 85 |
+| Mercedes W15 | W15-01 | Mercedes | 91 | 89 | 90 | 93 |
+| Red Bull RB20 | RB20-01 | Red Bull | 96 | 95 | 93 | 90 |
 
 ### Races
 | Name | Location | Laps | Weather |
@@ -490,7 +544,8 @@ After running `php artisan db:seed`:
 | Action | Admin | Engineer | Viewer |
 |---|---|---|---|
 | Login / Logout | ✅ | ✅ | ✅ |
-| View drivers, cars, races | ✅ | ✅ | ✅ |
+| View teams, drivers, cars, races | ✅ | ✅ | ✅ |
+| Create / Update / Delete teams | ✅ | ✅ | ❌ |
 | Create / Update / Delete drivers & cars | ✅ | ✅ | ❌ |
 | Create races & participants | ✅ | ✅ | ❌ |
 | Set strategies | ✅ | ✅ | ❌ |
@@ -506,8 +561,9 @@ app/
 ├── Http/
 │   └── Controllers/
 │       ├── AuthController.php          # login, logout, me
-│       ├── DriverController.php        # full CRUD
-│       ├── CarController.php           # full CRUD
+│       ├── TeamController.php          # full CRUD + nested drivers/cars
+│       ├── DriverController.php        # full CRUD + byTeam()
+│       ├── CarController.php           # full CRUD + byTeam()
 │       ├── RaceController.php          # index, store, show
 │       ├── RaceParticipantController.php # store, getByRace
 │       ├── StrategyController.php      # store, update
@@ -517,8 +573,9 @@ app/
 │       └── NotificationController.php  # index, read
 ├── Models/
 │   ├── User.php
-│   ├── Driver.php
-│   ├── Car.php
+│   ├── Team.php                        # ← NEW
+│   ├── Driver.php                      # team_id FK added
+│   ├── Car.php                         # team_id FK added
 │   ├── Race.php
 │   ├── RaceParticipant.php
 │   ├── Strategy.php
@@ -527,14 +584,8 @@ app/
 │   └── Notification.php
 └── Services/
     └── RaceSimulationService.php      # 🏎️ Core simulation engine
-
-database/
-├── migrations/                        # All table schemas
-└── seeders/
-    └── DatabaseSeeder.php             # Ferrari dummy data
-
 routes/
-└── api.php                            # All API routes
+└── api.php                            # All API routes incl. /teams
 ```
 
 ---
@@ -543,14 +594,16 @@ routes/
 
 ```
 1. POST /api/login                      → get token
-2. POST /api/races                      → create a race
-3. POST /api/participants               → assign Leclerc + SF-24 to race
-4. POST /api/strategies                 → set tyre=soft, pit_stop_lap=28
-5. POST /api/simulate/{raceId}          → 🏁 run simulation
-6. GET  /api/results/race/{raceId}      → see leaderboard with gap-to-leader
-7. GET  /api/lap-times/result/{id}      → see full lap telemetry
+2. GET  /api/teams                      → see all 3 seeded teams
+3. GET  /api/teams/1/drivers            → see Ferrari's drivers
+4. POST /api/races                      → create a race
+5. POST /api/participants               → assign Verstappen + RB20 to race
+6. POST /api/strategies                 → set tyre=soft, pit_stop_lap=25
+7. POST /api/simulate/{raceId}          → 🏁 run simulation
+8. GET  /api/results/race/{raceId}      → see leaderboard with gap-to-leader
+9. GET  /api/lap-times/result/{id}      → see full lap telemetry
 ```
 
 ---
 
-*Built to simulate real F1 race operations for Scuderia Ferrari. Not affiliated with Ferrari S.p.A.*
+*Built to simulate real F1 race operations for all constructor teams. Not affiliated with Formula 1, Ferrari, Mercedes, or Red Bull.*
